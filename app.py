@@ -1,21 +1,21 @@
 import streamlit as st
 import datetime
-import pytz  # For time zone!
+import pytz
 from streamlit_autorefresh import st_autorefresh
 
-st.set_page_config(page_title="Mirror Clock", page_icon="🕒", layout="centered")
+st.set_page_config(page_title="Mirror Clock", page_icon="🕒", layout="wide")
 
-# Set your local timezone
-timezone = pytz.timezone("Europe/Berlin")  # Replace with your TZ!
+# Your local timezone (example Europe/Berlin)
+timezone = pytz.timezone("Europe/Berlin")
 
 mirror_css = """
 <style>
 html, body, [data-testid="stAppViewContainer"] {
   height: 100%;
-  background-color: #000000;
+  background-color: #FFFFFF;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 }
 
 .clock {
@@ -23,7 +23,7 @@ html, body, [data-testid="stAppViewContainer"] {
   flex-direction: row-reverse;
   font-size: 25em;
   font-family: monospace;
-  color: #00FFFF;
+  color: #000000;
 }
 
 .digit {
@@ -41,7 +41,7 @@ st.markdown(mirror_css, unsafe_allow_html=True)
 # Auto refresh every second
 st_autorefresh(interval=1000, key="clockrefresh")
 
-# Get LOCAL time
+# Get local time
 now = datetime.datetime.now(timezone)
 hours = f"{now.hour:02d}"
 minutes = f"{now.minute:02d}"
