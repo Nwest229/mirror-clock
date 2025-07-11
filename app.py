@@ -1,6 +1,5 @@
 import streamlit as st
 import datetime
-import time
 
 st.set_page_config(page_title="Mirror Clock", page_icon="🕒", layout="centered")
 
@@ -26,8 +25,14 @@ mirror_css = """
 
 st.markdown(mirror_css, unsafe_allow_html=True)
 
-# Display once per rerun
-placeholder = st.empty()
+# 🚨 NEW! Autorefresh every second:
+st_autorefresh = st.experimental_rerun if hasattr(st, "experimental_rerun") else None
+
+st_autorefresh = st.experimental_get_query_params if hasattr(st, "experimental_get_query_params") else None
+
+from streamlit_autorefresh import st_autorefresh
+
+st_autorefresh(interval=1000, key="clock_refresh")
 
 now = datetime.datetime.now()
 hours = f"{now.hour:02d}"
@@ -43,12 +48,4 @@ html_clock = f"""
 </div>
 """
 
-placeholder.markdown(html_clock, unsafe_allow_html=True)
-
-# Wait 1 second then rerun
-time.sleep(1)
-st.experimental_rerun()
-
-# Wait 1 second then rerun script
-time.sleep(1)
-st.experimental_rerun()
+st.markdown(html_clock, unsafe_allow_html=True)
