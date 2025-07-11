@@ -45,6 +45,10 @@ html_clock = f"""
 
 placeholder.markdown(html_clock, unsafe_allow_html=True)
 
+# Wait 1 second then rerun
+time.sleep(1)
+st.experimental_rerun()
+
 # Wait 1 second then rerun script
 time.sleep(1)
 st.experimental_rerun()
