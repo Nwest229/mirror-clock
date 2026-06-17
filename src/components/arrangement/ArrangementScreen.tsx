@@ -17,6 +17,8 @@ import UnassignedPanel from "./UnassignedPanel";
 import TablesGrid from "./TablesGrid";
 import TableView from "./TableView";
 import PersonChip from "./PersonChip";
+import AddPersonModal from "./AddPersonModal";
+import PrintView from "./PrintView";
 import { UNASSIGNED_DROP_ID } from "./UnassignedPanel";
 
 interface ArrangementScreenProps {
@@ -30,6 +32,7 @@ export default function ArrangementScreen({ state, dispatch, onReset }: Arrangem
   const [shareLabel, setShareLabel] = useState<"share" | "copied">("share");
   const [viewMode, setViewMode] = useState<"all" | "single">("all");
   const [tableIndex, setTableIndex] = useState(0);
+  const [showAddPerson, setShowAddPerson] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -90,108 +93,131 @@ export default function ArrangementScreen({ state, dispatch, onReset }: Arrangem
     } catch {}
   }
 
+  function handlePrint() {
+    window.print();
+  }
+
   const total = state.people.length;
   const placed = total - unassignedPeople.length;
   const currentTable = state.tables[Math.min(tableIndex, state.tables.length - 1)];
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+    <>
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <div className="screen-only min-h-screen bg-gray-50 flex flex-col">
 
-        {/* Header */}
-        <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-2">
-          <Button variant="secondary" onClick={onReset} className="shrink-0 text-xs px-3">
-            ← Retour
-          </Button>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-gray-900 text-sm truncate">Plan de table</h1>
-            <p className="text-xs text-gray-400">{placed}/{total} placés</p>
-          </div>
-          <button
-            onClick={handleShare}
-            className="shrink-0 rounded-lg bg-indigo-50 text-indigo-600 px-3 py-2 text-xs font-medium hover:bg-indigo-100 transition-colors"
-          >
-            {shareLabel === "copied" ? "✓ Copié" : "↑ Partager"}
-          </button>
-        </header>
-
-        {/* View toggle */}
-        <div className="bg-white border-b border-gray-100 px-4 py-2">
-          <div className="flex bg-gray-100 rounded-xl p-0.5">
+          {/* Header */}
+          <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-2">
+            <Button variant="secondary" onClick={onReset} className="shrink-0 text-xs px-3">
+              ← Retour
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-semibold text-gray-900 text-sm truncate">Plan de table</h1>
+              <p className="text-xs text-gray-400">{placed}/{total} placés</p>
+            </div>
             <button
-              onClick={() => setViewMode("all")}
-              className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
-                viewMode === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
-              }`}
+              onClick={handlePrint}
+              className="shrink-0 rounded-lg bg-gray-100 text-gray-600 px-3 py-2 text-xs font-medium hover:bg-gray-200 transition-colors"
             >
-              ⊞ Toutes les tables
+              ⎙ PDF
             </button>
             <button
-              onClick={() => setViewMode("single")}
-              className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
-                viewMode === "single" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
-              }`}
+              onClick={handleShare}
+              className="shrink-0 rounded-lg bg-indigo-50 text-indigo-600 px-3 py-2 text-xs font-medium hover:bg-indigo-100 transition-colors"
             >
-              ⊡ Table par table
+              {shareLabel === "copied" ? "✓ Copié" : "↑ Partager"}
             </button>
+          </header>
+
+          {/* View toggle */}
+          <div className="bg-white border-b border-gray-100 px-4 py-2">
+            <div className="flex bg-gray-100 rounded-xl p-0.5">
+              <button
+                onClick={() => setViewMode("all")}
+                className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
+                  viewMode === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+                }`}
+              >
+                ⊞ Toutes les tables
+              </button>
+              <button
+                onClick={() => setViewMode("single")}
+                className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
+                  viewMode === "single" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+                }`}
+              >
+                ⊡ Table par table
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Unassigned (mobile bar — always visible) */}
-        <div className="md:hidden px-4 py-3 bg-white border-b border-gray-100">
-          <UnassignedPanel people={unassignedPeople} />
-        </div>
+          {/* Unassigned (mobile bar — always visible) */}
+          <div className="md:hidden px-4 py-3 bg-white border-b border-gray-100">
+            <UnassignedPanel people={unassignedPeople} onAdd={() => setShowAddPerson(true)} />
+          </div>
 
-        {/* Main area */}
-        <div className="flex flex-1 overflow-hidden">
+          {/* Main area */}
+          <div className="flex flex-1 overflow-hidden">
 
-          {/* Desktop sidebar */}
-          <aside className="hidden md:flex flex-col w-52 shrink-0 border-r border-gray-200 bg-white p-4 overflow-y-auto">
-            <UnassignedPanel people={unassignedPeople} />
-          </aside>
+            {/* Desktop sidebar */}
+            <aside className="hidden md:flex flex-col w-52 shrink-0 border-r border-gray-200 bg-white p-4 overflow-y-auto">
+              <UnassignedPanel people={unassignedPeople} onAdd={() => setShowAddPerson(true)} />
+            </aside>
 
-          {viewMode === "all" ? (
-            <main className="flex-1 overflow-y-auto p-4 md:p-8">
-              <TablesGrid tables={state.tables} people={state.people} />
-            </main>
-          ) : (
-            <main className="flex-1 flex flex-col overflow-hidden">
-              {/* Enlarged single table */}
-              <div className="flex-1 overflow-y-auto flex items-center justify-center p-4">
-                <TableView table={currentTable} people={state.people} enlarged />
-              </div>
-
-              {/* Prev / next navigation */}
-              <div className="shrink-0 bg-white border-t border-gray-200 flex items-center justify-between px-6 py-3">
-                <button
-                  onClick={() => setTableIndex(i => Math.max(0, i - 1))}
-                  disabled={tableIndex === 0}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 text-lg disabled:opacity-30 hover:bg-gray-200 transition-colors"
-                >
-                  ‹
-                </button>
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-gray-900">Table {tableIndex + 1}</p>
-                  <p className="text-xs text-gray-400">sur {state.tables.length}</p>
+            {viewMode === "all" ? (
+              <main className="flex-1 overflow-y-auto p-4 md:p-8">
+                <TablesGrid tables={state.tables} people={state.people} />
+              </main>
+            ) : (
+              <main className="flex-1 flex flex-col overflow-hidden">
+                {/* Enlarged single table */}
+                <div className="flex-1 overflow-y-auto flex items-center justify-center p-4">
+                  <TableView table={currentTable} people={state.people} enlarged />
                 </div>
-                <button
-                  onClick={() => setTableIndex(i => Math.min(state.tables.length - 1, i + 1))}
-                  disabled={tableIndex === state.tables.length - 1}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 text-lg disabled:opacity-30 hover:bg-gray-200 transition-colors"
-                >
-                  ›
-                </button>
-              </div>
-            </main>
-          )}
-        </div>
-      </div>
 
-      <DragOverlay dropAnimation={null}>
-        {activePerson ? (
-          <PersonChip draggableId="overlay" name={activePerson.name} gender={activePerson.gender} isDragOverlay />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+                {/* Prev / next navigation */}
+                <div className="shrink-0 bg-white border-t border-gray-200 flex items-center justify-between px-6 py-3">
+                  <button
+                    onClick={() => setTableIndex(i => Math.max(0, i - 1))}
+                    disabled={tableIndex === 0}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 text-lg disabled:opacity-30 hover:bg-gray-200 transition-colors"
+                  >
+                    ‹
+                  </button>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-gray-900">Table {tableIndex + 1}</p>
+                    <p className="text-xs text-gray-400">sur {state.tables.length}</p>
+                  </div>
+                  <button
+                    onClick={() => setTableIndex(i => Math.min(state.tables.length - 1, i + 1))}
+                    disabled={tableIndex === state.tables.length - 1}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 text-lg disabled:opacity-30 hover:bg-gray-200 transition-colors"
+                  >
+                    ›
+                  </button>
+                </div>
+              </main>
+            )}
+          </div>
+        </div>
+
+        <DragOverlay dropAnimation={null}>
+          {activePerson ? (
+            <PersonChip draggableId="overlay" name={activePerson.name} gender={activePerson.gender} isDragOverlay />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      {/* Print-only layout — hidden on screen, visible when printing */}
+      <PrintView state={state} personById={personById} />
+
+      {/* Add person modal */}
+      {showAddPerson && (
+        <AddPersonModal
+          onAdd={(name, gender) => dispatch({ type: "ADD_PERSON", name, gender })}
+          onClose={() => setShowAddPerson(false)}
+        />
+      )}
+    </>
   );
 }

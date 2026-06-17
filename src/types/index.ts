@@ -40,5 +40,6 @@ export type Action =
   | { type: "ASSIGN_TO_SEAT"; personId: string; targetSeatId: string }
   | { type: "MOVE_TO_SEAT"; sourceSeatId: string; targetSeatId: string }
   | { type: "UNASSIGN"; seatId: string }
+  | { type: "ADD_PERSON"; name: string; gender: Gender }
   | { type: "RESET_TO_SETUP" }
   | { type: "HYDRATE"; payload: AppState };

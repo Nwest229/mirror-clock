@@ -7,3 +7,9 @@
 *, *::before, *::after {
   box-sizing: border-box;
 }
+
+@media print {
+  .screen-only { display: none !important; }
+  .print-only  { display: block !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

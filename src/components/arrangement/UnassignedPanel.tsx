@@ -9,6 +9,7 @@ export const UNASSIGNED_DROP_ID = "unassigned-panel";
 
 interface UnassignedPanelProps {
   people: Person[];
+  onAdd?: () => void;
 }
 
 type Filter = "all" | "F" | "M";
@@ -26,7 +27,7 @@ function filterColor(f: Filter, active: boolean) {
   return "bg-gray-200 text-gray-800";
 }
 
-export default function UnassignedPanel({ people }: UnassignedPanelProps) {
+export default function UnassignedPanel({ people, onAdd }: UnassignedPanelProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const { setNodeRef, isOver } = useDroppable({ id: UNASSIGNED_DROP_ID });
 
@@ -41,12 +42,21 @@ export default function UnassignedPanel({ people }: UnassignedPanelProps) {
       ref={setNodeRef}
       className={`flex flex-col gap-2 rounded-xl transition-colors ${isOver ? "bg-indigo-50 ring-2 ring-indigo-300 ring-inset p-1 -m-1" : ""}`}
     >
-      {/* Header + count */}
+      {/* Header + count + add button */}
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold text-gray-700">Non placés</span>
         <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5">
           {people.length}
         </span>
+        {onAdd && (
+          <button
+            onClick={onAdd}
+            className="ml-auto shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200 transition-colors text-sm font-bold leading-none"
+            title="Ajouter une personne"
+          >
+            +
+          </button>
+        )}
       </div>
 
       {/* Gender filter pills */}

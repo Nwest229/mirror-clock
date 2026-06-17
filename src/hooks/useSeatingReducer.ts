@@ -96,6 +96,15 @@ function seatingReducer(state: AppState, action: Action): AppState {
       };
     }
 
+    case "ADD_PERSON": {
+      const person: Person = {
+        id: crypto.randomUUID(),
+        name: action.name,
+        gender: action.gender,
+      };
+      return { ...state, people: [...state.people, person] };
+    }
+
     case "RESET_TO_SETUP":
       return defaultState;
 
