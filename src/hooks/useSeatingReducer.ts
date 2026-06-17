@@ -84,6 +84,18 @@ function seatingReducer(state: AppState, action: Action): AppState {
       };
     }
 
+    case "UNASSIGN": {
+      return {
+        ...state,
+        tables: state.tables.map((table) => ({
+          ...table,
+          seats: table.seats.map((seat) =>
+            seat.id === action.seatId ? { ...seat, occupantId: null } : seat
+          ),
+        })),
+      };
+    }
+
     case "RESET_TO_SETUP":
       return defaultState;
 

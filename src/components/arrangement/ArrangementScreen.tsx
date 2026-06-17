@@ -17,6 +17,7 @@ import UnassignedPanel from "./UnassignedPanel";
 import TablesGrid from "./TablesGrid";
 import TableView from "./TableView";
 import PersonChip from "./PersonChip";
+import { UNASSIGNED_DROP_ID } from "./UnassignedPanel";
 
 interface ArrangementScreenProps {
   state: AppState;
@@ -58,11 +59,20 @@ export default function ArrangementScreen({ state, dispatch, onReset }: Arrangem
     const { active, over } = event;
     if (!over) return;
     const activeId = String(active.id);
-    const targetSeatId = String(over.id);
+    const overId = String(over.id);
+
+    // Drop back onto the unassigned panel → remove from seat
+    if (overId === UNASSIGNED_DROP_ID) {
+      if (activeId.startsWith("seat-")) {
+        dispatch({ type: "UNASSIGN", seatId: activeId.slice("seat-".length) });
+      }
+      return;
+    }
+
     if (activeId.startsWith("person-")) {
-      dispatch({ type: "ASSIGN_TO_SEAT", personId: activeId.slice("person-".length), targetSeatId });
+      dispatch({ type: "ASSIGN_TO_SEAT", personId: activeId.slice("person-".length), targetSeatId: overId });
     } else if (activeId.startsWith("seat-")) {
-      dispatch({ type: "MOVE_TO_SEAT", sourceSeatId: activeId.slice("seat-".length), targetSeatId });
+      dispatch({ type: "MOVE_TO_SEAT", sourceSeatId: activeId.slice("seat-".length), targetSeatId: overId });
     }
   }
 

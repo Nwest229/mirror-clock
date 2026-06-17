@@ -1,8 +1,11 @@
 "use client";
 
+import { useDroppable } from "@dnd-kit/core";
 import { useState } from "react";
 import { Gender, Person } from "@/types";
 import PersonChip from "./PersonChip";
+
+export const UNASSIGNED_DROP_ID = "unassigned-panel";
 
 interface UnassignedPanelProps {
   people: Person[];
@@ -25,6 +28,7 @@ function filterColor(f: Filter, active: boolean) {
 
 export default function UnassignedPanel({ people }: UnassignedPanelProps) {
   const [filter, setFilter] = useState<Filter>("all");
+  const { setNodeRef, isOver } = useDroppable({ id: UNASSIGNED_DROP_ID });
 
   const girlCount = people.filter(p => p.gender === "F").length;
   const boyCount  = people.filter(p => p.gender === "M").length;
@@ -33,7 +37,10 @@ export default function UnassignedPanel({ people }: UnassignedPanelProps) {
   const visible = filter === "all" ? people : people.filter(p => p.gender === (filter as Gender));
 
   return (
-    <div className="flex flex-col gap-2">
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col gap-2 rounded-xl transition-colors ${isOver ? "bg-indigo-50 ring-2 ring-indigo-300 ring-inset p-1 -m-1" : ""}`}
+    >
       {/* Header + count */}
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold text-gray-700">Non placés</span>
