@@ -25,6 +25,7 @@ export default function SeatSlot({ seat, occupant, size = 40 }: SeatSlotProps) {
         <PersonChip
           draggableId={`seat-${seat.id}`}
           name={occupant.name}
+          gender={occupant.gender}
           compact={size <= 40}
         />
       ) : null}

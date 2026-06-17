@@ -27,8 +27,8 @@ export default function ArrangementScreen({ state, dispatch, onReset }: Arrangem
   const [activePerson, setActivePerson] = useState<Person | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { distance: 10 } })
   );
 
   const personById = Object.fromEntries(state.people.map((p) => [p.id, p]));
@@ -107,7 +107,7 @@ export default function ArrangementScreen({ state, dispatch, onReset }: Arrangem
 
       <DragOverlay dropAnimation={null}>
         {activePerson ? (
-          <PersonChip draggableId="overlay" name={activePerson.name} isDragOverlay />
+          <PersonChip draggableId="overlay" name={activePerson.name} gender={activePerson.gender} isDragOverlay />
         ) : null}
       </DragOverlay>
     </DndContext>

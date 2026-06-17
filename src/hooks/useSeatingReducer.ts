@@ -1,14 +1,25 @@
 "use client";
 
-import { useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import { Action, AppState, Person, Seat, Table } from "@/types";
 
-const initialState: AppState = {
+const STORAGE_KEY = "seating-app-v2";
+
+const defaultState: AppState = {
   screen: "setup",
   config: null,
   people: [],
   tables: [],
 };
+
+function loadInitialState(): AppState {
+  if (typeof window === "undefined") return defaultState;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved) as AppState;
+  } catch {}
+  return defaultState;
+}
 
 function buildTables(tableCount: number, seatsPerTable: number, shape: import("@/types").TableShape): Table[] {
   return Array.from({ length: tableCount }, (_, ti) => {
@@ -26,10 +37,11 @@ function buildTables(tableCount: number, seatsPerTable: number, shape: import("@
 function seatingReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case "SUBMIT_SETUP": {
-      const { names, tableCount, seatsPerTable, tableShape } = action.payload;
-      const people: Person[] = names.map((name) => ({
+      const { people: inputPeople, tableCount, seatsPerTable, tableShape } = action.payload;
+      const people: Person[] = inputPeople.map(({ name, gender }) => ({
         id: crypto.randomUUID(),
         name,
+        gender,
       }));
       const tables = buildTables(tableCount, seatsPerTable, tableShape);
       return { screen: "arrangement", config: action.payload, people, tables };
@@ -79,7 +91,7 @@ function seatingReducer(state: AppState, action: Action): AppState {
     }
 
     case "RESET_TO_SETUP":
-      return initialState;
+      return defaultState;
 
     default:
       return state;
@@ -87,5 +99,20 @@ function seatingReducer(state: AppState, action: Action): AppState {
 }
 
 export function useSeatingReducer() {
-  return useReducer(seatingReducer, initialState);
+  const [state, rawDispatch] = useReducer(seatingReducer, undefined, loadInitialState);
+
+  useEffect(() => {
+    if (state.screen === "arrangement") {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+    }
+  }, [state]);
+
+  function dispatch(action: Action) {
+    if (action.type === "RESET_TO_SETUP") {
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    }
+    rawDispatch(action);
+  }
+
+  return [state, dispatch] as const;
 }

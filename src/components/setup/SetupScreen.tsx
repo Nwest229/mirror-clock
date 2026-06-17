@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SetupConfig, TableShape } from "@/types";
+import { Gender, SetupConfig, TableShape } from "@/types";
 import Button from "@/components/ui/Button";
 
 interface SetupScreenProps {
@@ -9,29 +9,29 @@ interface SetupScreenProps {
 }
 
 export default function SetupScreen({ onSubmit }: SetupScreenProps) {
-  const [namesText, setNamesText] = useState("");
+  const [girlsText, setGirlsText] = useState("");
+  const [boysText, setBoysText] = useState("");
   const [tableCount, setTableCount] = useState(2);
   const [seatsPerTable, setSeatsPerTable] = useState(6);
   const [tableShape, setTableShape] = useState<TableShape>("round");
   const [error, setError] = useState("");
 
+  const girlCount = girlsText.split("\n").filter((n) => n.trim()).length;
+  const boyCount = boysText.split("\n").filter((n) => n.trim()).length;
+  const totalCount = (girlsText.trim() ? girlCount : 0) + (boysText.trim() ? boyCount : 0);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const names = namesText
-      .split("\n")
-      .map((n) => n.trim())
-      .filter(Boolean);
 
-    if (names.length === 0) {
-      setError("Entrez au moins un nom.");
-      return;
-    }
-    if (tableCount < 1 || seatsPerTable < 1) {
-      setError("Le nombre de tables et de places doit être supérieur à 0.");
-      return;
-    }
+    const girls = girlsText.split("\n").map((n) => n.trim()).filter(Boolean).map((name) => ({ name, gender: "F" as Gender }));
+    const boys = boysText.split("\n").map((n) => n.trim()).filter(Boolean).map((name) => ({ name, gender: "M" as Gender }));
+    const people = [...girls, ...boys];
+
+    if (people.length === 0) { setError("Entrez au moins un nom."); return; }
+    if (tableCount < 1 || seatsPerTable < 1) { setError("Le nombre de tables et de places doit être supérieur à 0."); return; }
+
     setError("");
-    onSubmit({ names, tableCount, seatsPerTable, tableShape });
+    onSubmit({ people, tableCount, seatsPerTable, tableShape });
   }
 
   return (
@@ -40,29 +40,41 @@ export default function SetupScreen({ onSubmit }: SetupScreenProps) {
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Plan de table</h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Liste des noms <span className="text-gray-400 font-normal">(un par ligne)</span>
-            </label>
-            <textarea
-              value={namesText}
-              onChange={(e) => setNamesText(e.target.value)}
-              rows={8}
-              placeholder={"Alice\nBob\nCharlie\n..."}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
-            />
-            {namesText.trim() && (
-              <p className="text-xs text-gray-400 mt-1">
-                {namesText.split("\n").filter((n) => n.trim()).length} personnes
-              </p>
-            )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-pink-600 mb-1">♀ Filles</label>
+              <textarea
+                value={girlsText}
+                onChange={(e) => setGirlsText(e.target.value)}
+                rows={6}
+                placeholder={"Alice\nMarie\n..."}
+                className="w-full rounded-lg border border-pink-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none"
+              />
+              {girlsText.trim() && (
+                <p className="text-xs text-pink-400 mt-0.5">{girlCount} fille{girlCount > 1 ? "s" : ""}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-sky-600 mb-1">♂ Garçons</label>
+              <textarea
+                value={boysText}
+                onChange={(e) => setBoysText(e.target.value)}
+                rows={6}
+                placeholder={"Bob\nCharles\n..."}
+                className="w-full rounded-lg border border-sky-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 resize-none"
+              />
+              {boysText.trim() && (
+                <p className="text-xs text-sky-400 mt-0.5">{boyCount} garçon{boyCount > 1 ? "s" : ""}</p>
+              )}
+            </div>
           </div>
+          {totalCount > 0 && (
+            <p className="text-xs text-gray-400 -mt-2">{totalCount} personnes au total</p>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre de tables
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de tables</label>
               <input
                 type="number"
                 min={1}
@@ -73,9 +85,7 @@ export default function SetupScreen({ onSubmit }: SetupScreenProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Places par table
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Places par table</label>
               <input
                 type="number"
                 min={1}
@@ -88,9 +98,7 @@ export default function SetupScreen({ onSubmit }: SetupScreenProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Forme des tables
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Forme des tables</label>
             <div className="flex gap-3">
               {(["round", "rectangular"] as TableShape[]).map((shape) => (
                 <button

@@ -1,8 +1,10 @@
 export type TableShape = "round" | "rectangular";
+export type Gender = "F" | "M" | null;
 
 export interface Person {
   id: string;
   name: string;
+  gender: Gender;
 }
 
 export interface Seat {
@@ -20,7 +22,7 @@ export interface Table {
 }
 
 export interface SetupConfig {
-  names: string[];
+  people: { name: string; gender: Gender }[];
   tableCount: number;
   seatsPerTable: number;
   tableShape: TableShape;

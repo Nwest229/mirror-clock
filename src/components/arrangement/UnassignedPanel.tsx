@@ -20,7 +20,7 @@ export default function UnassignedPanel({ people }: UnassignedPanelProps) {
           <p className="text-sm text-gray-400 italic">Tout le monde est placé ✓</p>
         ) : (
           people.map((person) => (
-            <PersonChip key={person.id} draggableId={`person-${person.id}`} name={person.name} />
+            <PersonChip key={person.id} draggableId={`person-${person.id}`} name={person.name} gender={person.gender} />
           ))
         )}
       </div>
@@ -30,7 +30,7 @@ export default function UnassignedPanel({ people }: UnassignedPanelProps) {
           <p className="text-sm text-gray-400 italic">Tout le monde est placé ✓</p>
         ) : (
           people.map((person) => (
-            <PersonChip key={person.id} draggableId={`person-${person.id}`} name={person.name} />
+            <PersonChip key={person.id} draggableId={`person-${person.id}`} name={person.name} gender={person.gender} />
           ))
         )}
       </div>
