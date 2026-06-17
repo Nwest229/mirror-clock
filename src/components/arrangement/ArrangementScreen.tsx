@@ -166,13 +166,13 @@ export default function ArrangementScreen({ state, dispatch, onReset }: Arrangem
 
             {viewMode === "all" ? (
               <main className="flex-1 overflow-y-auto p-4 md:p-8">
-                <TablesGrid tables={state.tables} people={state.people} />
+                <TablesGrid tables={state.tables} people={state.people} onUnassign={seatId => dispatch({ type: "UNASSIGN", seatId })} />
               </main>
             ) : (
               <main className="flex-1 flex flex-col overflow-hidden">
                 {/* Enlarged single table */}
                 <div className="flex-1 overflow-y-auto flex items-center justify-center p-4">
-                  <TableView table={currentTable} people={state.people} enlarged />
+                  <TableView table={currentTable} people={state.people} enlarged onUnassign={seatId => dispatch({ type: "UNASSIGN", seatId })} />
                 </div>
 
                 {/* Prev / next navigation */}

@@ -6,12 +6,13 @@ interface TableViewProps {
   table: Table;
   people: Person[];
   enlarged?: boolean;
+  onUnassign?: (seatId: string) => void;
 }
 
-export default function TableView({ table, people, enlarged = false }: TableViewProps) {
+export default function TableView({ table, people, enlarged = false, onUnassign }: TableViewProps) {
   return table.shape === "round" ? (
-    <RoundTable table={table} people={people} enlarged={enlarged} />
+    <RoundTable table={table} people={people} enlarged={enlarged} onUnassign={onUnassign} />
   ) : (
-    <RectangularTable table={table} people={people} enlarged={enlarged} />
+    <RectangularTable table={table} people={people} enlarged={enlarged} onUnassign={onUnassign} />
   );
 }

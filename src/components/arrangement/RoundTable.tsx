@@ -5,6 +5,7 @@ interface RoundTableProps {
   table: Table;
   people: Person[];
   enlarged?: boolean;
+  onUnassign?: (seatId: string) => void;
 }
 
 function getSeatPositions(count: number, containerSize: number, seatSize: number) {
@@ -22,7 +23,7 @@ function getSeatPositions(count: number, containerSize: number, seatSize: number
   });
 }
 
-export default function RoundTable({ table, people, enlarged = false }: RoundTableProps) {
+export default function RoundTable({ table, people, enlarged = false, onUnassign }: RoundTableProps) {
   const count = table.seats.length;
   const seatSize = enlarged
     ? (count <= 6 ? 52 : count <= 10 ? 44 : 38)
@@ -66,7 +67,7 @@ export default function RoundTable({ table, people, enlarged = false }: RoundTab
           return (
             <div key={seat.id}>
               <div className="absolute" style={{ left: positions[i].x, top: positions[i].y }}>
-                <SeatSlot seat={seat} occupant={occupant} size={seatSize} />
+                <SeatSlot seat={seat} occupant={occupant} size={seatSize} onUnassign={onUnassign ? () => onUnassign(seat.id) : undefined} />
               </div>
               {enlarged && occupant && (
                 <div

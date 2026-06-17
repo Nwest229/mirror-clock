@@ -5,9 +5,10 @@ interface RectangularTableProps {
   table: Table;
   people: Person[];
   enlarged?: boolean;
+  onUnassign?: (seatId: string) => void;
 }
 
-export default function RectangularTable({ table, people, enlarged = false }: RectangularTableProps) {
+export default function RectangularTable({ table, people, enlarged = false, onUnassign }: RectangularTableProps) {
   const count = table.seats.length;
   const topSeats = table.seats.slice(0, Math.ceil(count / 2));
   const bottomSeats = table.seats.slice(Math.ceil(count / 2));
@@ -21,7 +22,7 @@ export default function RectangularTable({ table, people, enlarged = false }: Re
     const occupant = seat.occupantId ? (personById[seat.occupantId] ?? null) : null;
     return (
       <div className="flex flex-col items-center gap-0.5">
-        <SeatSlot seat={seat} occupant={occupant} size={seatSize} />
+        <SeatSlot seat={seat} occupant={occupant} size={seatSize} onUnassign={onUnassign ? () => onUnassign(seat.id) : undefined} />
         {enlarged && (
           <span className="text-[9px] font-medium text-gray-600 leading-tight max-w-[48px] truncate text-center h-3">
             {occupant ? occupant.name.split(" ")[0] : ""}
