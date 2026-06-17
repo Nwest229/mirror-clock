@@ -15,6 +15,7 @@ import { Action, AppState, Person } from "@/types";
 import Button from "@/components/ui/Button";
 import UnassignedPanel from "./UnassignedPanel";
 import TablesGrid from "./TablesGrid";
+import TableView from "./TableView";
 import PersonChip from "./PersonChip";
 
 interface ArrangementScreenProps {
@@ -26,10 +27,13 @@ interface ArrangementScreenProps {
 export default function ArrangementScreen({ state, dispatch, onReset }: ArrangementScreenProps) {
   const [activePerson, setActivePerson] = useState<Person | null>(null);
   const [shareLabel, setShareLabel] = useState<"share" | "copied">("share");
+  const [viewMode, setViewMode] = useState<"all" | "single">("all");
+  const [tableIndex, setTableIndex] = useState(0);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { distance: 10 } })
+    // delay: hold 250ms without moving to grab — lets quick swipes scroll freely
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } })
   );
 
   const personById = Object.fromEntries(state.people.map((p) => [p.id, p]));
@@ -53,10 +57,8 @@ export default function ArrangementScreen({ state, dispatch, onReset }: Arrangem
     setActivePerson(null);
     const { active, over } = event;
     if (!over) return;
-
     const activeId = String(active.id);
     const targetSeatId = String(over.id);
-
     if (activeId.startsWith("person-")) {
       dispatch({ type: "ASSIGN_TO_SEAT", personId: activeId.slice("person-".length), targetSeatId });
     } else if (activeId.startsWith("seat-")) {
@@ -80,39 +82,98 @@ export default function ArrangementScreen({ state, dispatch, onReset }: Arrangem
 
   const total = state.people.length;
   const placed = total - unassignedPeople.length;
+  const currentTable = state.tables[Math.min(tableIndex, state.tables.length - 1)];
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="min-h-screen bg-gray-50 flex flex-col">
+
+        {/* Header */}
         <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-2">
           <Button variant="secondary" onClick={onReset} className="shrink-0 text-xs px-3">
             ← Retour
           </Button>
           <div className="flex-1 min-w-0">
             <h1 className="font-semibold text-gray-900 text-sm truncate">Plan de table</h1>
-            <p className="text-xs text-gray-400">
-              {placed}/{total} placés · {state.tables.length} table{state.tables.length > 1 ? "s" : ""}
-            </p>
+            <p className="text-xs text-gray-400">{placed}/{total} placés</p>
           </div>
           <button
             onClick={handleShare}
-            className="shrink-0 flex items-center gap-1.5 rounded-lg bg-indigo-50 text-indigo-600 px-3 py-2 text-xs font-medium hover:bg-indigo-100 transition-colors"
+            className="shrink-0 rounded-lg bg-indigo-50 text-indigo-600 px-3 py-2 text-xs font-medium hover:bg-indigo-100 transition-colors"
           >
             {shareLabel === "copied" ? "✓ Copié" : "↑ Partager"}
           </button>
         </header>
 
+        {/* View toggle */}
+        <div className="bg-white border-b border-gray-100 px-4 py-2">
+          <div className="flex bg-gray-100 rounded-xl p-0.5">
+            <button
+              onClick={() => setViewMode("all")}
+              className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
+                viewMode === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+              }`}
+            >
+              ⊞ Toutes les tables
+            </button>
+            <button
+              onClick={() => setViewMode("single")}
+              className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
+                viewMode === "single" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+              }`}
+            >
+              ⊡ Table par table
+            </button>
+          </div>
+        </div>
+
+        {/* Unassigned (mobile bar — always visible) */}
         <div className="md:hidden px-4 py-3 bg-white border-b border-gray-100">
           <UnassignedPanel people={unassignedPeople} />
         </div>
 
+        {/* Main area */}
         <div className="flex flex-1 overflow-hidden">
+
+          {/* Desktop sidebar */}
           <aside className="hidden md:flex flex-col w-52 shrink-0 border-r border-gray-200 bg-white p-4 overflow-y-auto">
             <UnassignedPanel people={unassignedPeople} />
           </aside>
-          <main className="flex-1 overflow-y-auto p-4 md:p-8">
-            <TablesGrid tables={state.tables} people={state.people} />
-          </main>
+
+          {viewMode === "all" ? (
+            <main className="flex-1 overflow-y-auto p-4 md:p-8">
+              <TablesGrid tables={state.tables} people={state.people} />
+            </main>
+          ) : (
+            <main className="flex-1 flex flex-col overflow-hidden">
+              {/* Enlarged single table */}
+              <div className="flex-1 overflow-y-auto flex items-center justify-center p-4">
+                <TableView table={currentTable} people={state.people} enlarged />
+              </div>
+
+              {/* Prev / next navigation */}
+              <div className="shrink-0 bg-white border-t border-gray-200 flex items-center justify-between px-6 py-3">
+                <button
+                  onClick={() => setTableIndex(i => Math.max(0, i - 1))}
+                  disabled={tableIndex === 0}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 text-lg disabled:opacity-30 hover:bg-gray-200 transition-colors"
+                >
+                  ‹
+                </button>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-gray-900">Table {tableIndex + 1}</p>
+                  <p className="text-xs text-gray-400">sur {state.tables.length}</p>
+                </div>
+                <button
+                  onClick={() => setTableIndex(i => Math.min(state.tables.length - 1, i + 1))}
+                  disabled={tableIndex === state.tables.length - 1}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 text-lg disabled:opacity-30 hover:bg-gray-200 transition-colors"
+                >
+                  ›
+                </button>
+              </div>
+            </main>
+          )}
         </div>
       </div>
 

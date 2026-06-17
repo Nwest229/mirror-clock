@@ -2,7 +2,7 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Gender } from "@/types";
 
 interface PersonChipProps {
@@ -46,6 +46,13 @@ export default function PersonChip({
     disabled: isDragOverlay,
   });
 
+  useEffect(() => {
+    if (isDragging) {
+      clearTimeout(timerRef.current!);
+      setShowTooltip(false);
+    }
+  }, [isDragging]);
+
   const style = isDragOverlay
     ? { transform: "rotate(2deg)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }
     : { transform: CSS.Translate.toString(transform), opacity: isDragging ? 0.3 : 1, touchAction: "none" };
@@ -57,7 +64,7 @@ export default function PersonChip({
     if (isDragOverlay) return;
     startPos.current = { x: e.clientX, y: e.clientY };
     clearTimeout(timerRef.current!);
-    timerRef.current = setTimeout(() => setShowTooltip(true), 450);
+    timerRef.current = setTimeout(() => setShowTooltip(true), 500);
   }
   function onPointerMove(e: React.PointerEvent) {
     if (!startPos.current) return;
@@ -72,8 +79,14 @@ export default function PersonChip({
     hideRef.current = setTimeout(() => setShowTooltip(false), 1800);
   }
 
+  const tooltip = showTooltip && !isDragging && (
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg whitespace-nowrap z-50 pointer-events-none shadow-xl">
+      {symbol && <span className="mr-1">{symbol}</span>}{name}
+      <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-900" />
+    </div>
+  );
+
   if (compact) {
-    // Seats: fill the circle with initials
     return (
       <div
         className="relative w-full h-full"
@@ -89,12 +102,7 @@ export default function PersonChip({
         >
           {initials(name)}
         </div>
-        {showTooltip && !isDragging && (
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg whitespace-nowrap z-50 pointer-events-none shadow-xl">
-            {symbol && <span className="mr-1">{symbol}</span>}{name}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-900" />
-          </div>
-        )}
+        {tooltip}
       </div>
     );
   }
@@ -114,14 +122,9 @@ export default function PersonChip({
         className={`select-none rounded-full text-white font-medium cursor-grab active:cursor-grabbing whitespace-nowrap px-3 py-1.5 text-sm transition-colors ${color}`}
       >
         {symbol && <span className="mr-0.5 text-xs opacity-80">{symbol}</span>}
-        {isDragOverlay ? name : name}
+        {name}
       </div>
-      {showTooltip && !isDragging && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg whitespace-nowrap z-50 pointer-events-none shadow-xl">
-          {symbol && <span className="mr-1">{symbol}</span>}{name}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-900" />
-        </div>
-      )}
+      {tooltip}
     </div>
   );
 }

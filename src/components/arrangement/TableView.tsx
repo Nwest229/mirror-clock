@@ -5,12 +5,13 @@ import RectangularTable from "./RectangularTable";
 interface TableViewProps {
   table: Table;
   people: Person[];
+  enlarged?: boolean;
 }
 
-export default function TableView({ table, people }: TableViewProps) {
+export default function TableView({ table, people, enlarged = false }: TableViewProps) {
   return table.shape === "round" ? (
-    <RoundTable table={table} people={people} />
+    <RoundTable table={table} people={people} enlarged={enlarged} />
   ) : (
-    <RectangularTable table={table} people={people} />
+    <RectangularTable table={table} people={people} enlarged={enlarged} />
   );
 }
