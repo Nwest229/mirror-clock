@@ -25,6 +25,10 @@ function genderSymbol(gender: Gender) {
   return "";
 }
 
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
+}
+
 export default function PersonChip({
   draggableId,
   name,
@@ -34,7 +38,7 @@ export default function PersonChip({
 }: PersonChipProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPos = useRef<{ x: number; y: number } | null>(null);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -44,13 +48,10 @@ export default function PersonChip({
 
   const style = isDragOverlay
     ? { transform: "rotate(2deg)", boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }
-    : {
-        transform: CSS.Translate.toString(transform),
-        opacity: isDragging ? 0.3 : 1,
-        touchAction: "none",
-      };
+    : { transform: CSS.Translate.toString(transform), opacity: isDragging ? 0.3 : 1, touchAction: "none" };
 
   const symbol = genderSymbol(gender);
+  const color = chipColor(gender);
 
   function onPointerDown(e: React.PointerEvent) {
     if (isDragOverlay) return;
@@ -58,25 +59,50 @@ export default function PersonChip({
     clearTimeout(timerRef.current!);
     timerRef.current = setTimeout(() => setShowTooltip(true), 450);
   }
-
   function onPointerMove(e: React.PointerEvent) {
     if (!startPos.current) return;
-    const dist = Math.hypot(e.clientX - startPos.current.x, e.clientY - startPos.current.y);
-    if (dist > 8) {
+    if (Math.hypot(e.clientX - startPos.current.x, e.clientY - startPos.current.y) > 8) {
       clearTimeout(timerRef.current!);
       setShowTooltip(false);
     }
   }
-
   function onPointerUp() {
     clearTimeout(timerRef.current!);
-    clearTimeout(hideTimerRef.current!);
-    hideTimerRef.current = setTimeout(() => setShowTooltip(false), 1800);
+    clearTimeout(hideRef.current!);
+    hideRef.current = setTimeout(() => setShowTooltip(false), 1800);
   }
 
+  if (compact) {
+    // Seats: fill the circle with initials
+    return (
+      <div
+        className="relative w-full h-full"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+      >
+        <div
+          ref={isDragOverlay ? undefined : setNodeRef}
+          {...(isDragOverlay ? {} : { ...listeners, ...attributes })}
+          style={style}
+          className={`w-full h-full rounded-full flex items-center justify-center font-bold text-white text-xs cursor-grab active:cursor-grabbing select-none transition-colors ${color}`}
+        >
+          {initials(name)}
+        </div>
+        {showTooltip && !isDragging && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg whitespace-nowrap z-50 pointer-events-none shadow-xl">
+            {symbol && <span className="mr-1">{symbol}</span>}{name}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-900" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Unassigned panel: pill with full name
   return (
     <div
-      className="relative inline-block"
+      className="relative inline-block shrink-0"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -85,21 +111,14 @@ export default function PersonChip({
         ref={isDragOverlay ? undefined : setNodeRef}
         {...(isDragOverlay ? {} : { ...listeners, ...attributes })}
         style={style}
-        className={`select-none rounded-full text-white font-medium cursor-grab active:cursor-grabbing transition-colors
-          ${compact ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm"}
-          ${chipColor(gender)}
-          ${isDragOverlay ? "whitespace-nowrap" : "max-w-[110px] overflow-hidden text-ellipsis whitespace-nowrap"}
-        `}
-        title={name}
+        className={`select-none rounded-full text-white font-medium cursor-grab active:cursor-grabbing whitespace-nowrap px-3 py-1.5 text-sm transition-colors ${color}`}
       >
-        {symbol && <span className="mr-0.5 opacity-80 text-xs">{symbol}</span>}
-        {name}
+        {symbol && <span className="mr-0.5 text-xs opacity-80">{symbol}</span>}
+        {isDragOverlay ? name : name}
       </div>
-
       {showTooltip && !isDragging && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-sm px-3 py-1.5 rounded-lg whitespace-nowrap z-50 pointer-events-none shadow-xl">
-          {symbol && <span className="mr-1">{symbol}</span>}
-          {name}
+          {symbol && <span className="mr-1">{symbol}</span>}{name}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-900" />
         </div>
       )}

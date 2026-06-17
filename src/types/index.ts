@@ -39,4 +39,5 @@ export type Action =
   | { type: "SUBMIT_SETUP"; payload: SetupConfig }
   | { type: "ASSIGN_TO_SEAT"; personId: string; targetSeatId: string }
   | { type: "MOVE_TO_SEAT"; sourceSeatId: string; targetSeatId: string }
-  | { type: "RESET_TO_SETUP" };
+  | { type: "RESET_TO_SETUP" }
+  | { type: "HYDRATE"; payload: AppState };

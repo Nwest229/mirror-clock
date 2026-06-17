@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { Action, AppState, Person, Seat, Table } from "@/types";
 
 const STORAGE_KEY = "seating-app-v2";
@@ -11,15 +11,6 @@ const defaultState: AppState = {
   people: [],
   tables: [],
 };
-
-function loadInitialState(): AppState {
-  if (typeof window === "undefined") return defaultState;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved) as AppState;
-  } catch {}
-  return defaultState;
-}
 
 function buildTables(tableCount: number, seatsPerTable: number, shape: import("@/types").TableShape): Table[] {
   return Array.from({ length: tableCount }, (_, ti) => {
@@ -36,6 +27,9 @@ function buildTables(tableCount: number, seatsPerTable: number, shape: import("@
 
 function seatingReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case "HYDRATE":
+      return action.payload;
+
     case "SUBMIT_SETUP": {
       const { people: inputPeople, tableCount, seatsPerTable, tableShape } = action.payload;
       const people: Person[] = inputPeople.map(({ name, gender }) => ({
@@ -99,13 +93,35 @@ function seatingReducer(state: AppState, action: Action): AppState {
 }
 
 export function useSeatingReducer() {
-  const [state, rawDispatch] = useReducer(seatingReducer, undefined, loadInitialState);
+  const [state, rawDispatch] = useReducer(seatingReducer, defaultState);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Priority: URL hash (shared link) > localStorage > default
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      try {
+        const loaded = JSON.parse(decodeURIComponent(atob(hash))) as AppState;
+        window.history.replaceState(null, "", window.location.pathname);
+        rawDispatch({ type: "HYDRATE", payload: loaded });
+        setReady(true);
+        return;
+      } catch {}
+    }
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) rawDispatch({ type: "HYDRATE", payload: JSON.parse(saved) });
+    } catch {}
+    setReady(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
     if (state.screen === "arrangement") {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
     }
-  }, [state]);
+  }, [state, ready]);
 
   function dispatch(action: Action) {
     if (action.type === "RESET_TO_SETUP") {
@@ -114,5 +130,5 @@ export function useSeatingReducer() {
     rawDispatch(action);
   }
 
-  return [state, dispatch] as const;
+  return [state, dispatch, ready] as const;
 }
