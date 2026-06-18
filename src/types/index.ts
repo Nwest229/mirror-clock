@@ -24,7 +24,7 @@ export interface Table {
 export interface SetupConfig {
   people: { name: string; gender: Gender }[];
   tableCount: number;
-  seatsPerTable: number;
+  seatsPerTable: number[];
   tableShape: TableShape;
 }
 

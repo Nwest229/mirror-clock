@@ -10,28 +10,49 @@ interface SetupScreenProps {
 
 export default function SetupScreen({ onSubmit }: SetupScreenProps) {
   const [girlsText, setGirlsText] = useState("");
-  const [boysText, setBoysText] = useState("");
-  const [tableCount, setTableCount] = useState(2);
-  const [seatsPerTable, setSeatsPerTable] = useState(6);
-  const [tableShape, setTableShape] = useState<TableShape>("round");
-  const [error, setError] = useState("");
+  const [boysText,  setBoysText]  = useState("");
+  const [tableCount,    setTableCountRaw]    = useState(2);
+  const [defaultSeats,  setDefaultSeatsRaw]  = useState(6);
+  const [tableSeats,    setTableSeats]        = useState<number[]>([6, 6]);
+  const [tableShape,    setTableShape]        = useState<TableShape>("round");
+  const [error,         setError]             = useState("");
 
-  const girlCount = girlsText.split("\n").filter((n) => n.trim()).length;
-  const boyCount = boysText.split("\n").filter((n) => n.trim()).length;
+  const girlCount  = girlsText.split("\n").filter(n => n.trim()).length;
+  const boyCount   = boysText.split("\n").filter(n => n.trim()).length;
   const totalCount = (girlsText.trim() ? girlCount : 0) + (boysText.trim() ? boyCount : 0);
+
+  function setTableCount(n: number) {
+    const c = Math.max(1, Math.min(20, n));
+    setTableCountRaw(c);
+    setTableSeats(prev => {
+      const next = [...prev];
+      while (next.length < c) next.push(defaultSeats);
+      return next.slice(0, c);
+    });
+  }
+
+  function setDefaultSeats(n: number) {
+    const v = Math.max(1, Math.min(30, n));
+    setDefaultSeatsRaw(v);
+    setTableSeats(Array(tableCount).fill(v));
+  }
+
+  function setSeat(i: number, n: number) {
+    const v = Math.max(1, Math.min(30, n));
+    setTableSeats(prev => prev.map((s, idx) => idx === i ? v : s));
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    const girls = girlsText.split("\n").map((n) => n.trim()).filter(Boolean).map((name) => ({ name, gender: "F" as Gender }));
-    const boys = boysText.split("\n").map((n) => n.trim()).filter(Boolean).map((name) => ({ name, gender: "M" as Gender }));
+    const girls  = girlsText.split("\n").map(n => n.trim()).filter(Boolean).map(name => ({ name, gender: "F" as Gender }));
+    const boys   = boysText.split("\n").map(n => n.trim()).filter(Boolean).map(name => ({ name, gender: "M" as Gender }));
     const people = [...girls, ...boys];
 
     if (people.length === 0) { setError("Entrez au moins un nom."); return; }
-    if (tableCount < 1 || seatsPerTable < 1) { setError("Le nombre de tables et de places doit être supérieur à 0."); return; }
+    if (tableCount < 1)       { setError("Il faut au moins une table."); return; }
 
     setError("");
-    onSubmit({ people, tableCount, seatsPerTable, tableShape });
+    onSubmit({ people, tableCount, seatsPerTable: tableSeats, tableShape });
   }
 
   return (
@@ -40,70 +61,89 @@ export default function SetupScreen({ onSubmit }: SetupScreenProps) {
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Plan de table</h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Names */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-pink-600 mb-1">♀ Filles</label>
               <textarea
                 value={girlsText}
-                onChange={(e) => setGirlsText(e.target.value)}
+                onChange={e => setGirlsText(e.target.value)}
                 rows={6}
                 placeholder={"Alice\nMarie\n..."}
                 className="w-full rounded-lg border border-pink-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none"
               />
-              {girlsText.trim() && (
-                <p className="text-xs text-pink-400 mt-0.5">{girlCount} fille{girlCount > 1 ? "s" : ""}</p>
-              )}
+              {girlsText.trim() && <p className="text-xs text-pink-400 mt-0.5">{girlCount} fille{girlCount > 1 ? "s" : ""}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-sky-600 mb-1">♂ Garçons</label>
               <textarea
                 value={boysText}
-                onChange={(e) => setBoysText(e.target.value)}
+                onChange={e => setBoysText(e.target.value)}
                 rows={6}
                 placeholder={"Bob\nCharles\n..."}
                 className="w-full rounded-lg border border-sky-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300 resize-none"
               />
-              {boysText.trim() && (
-                <p className="text-xs text-sky-400 mt-0.5">{boyCount} garçon{boyCount > 1 ? "s" : ""}</p>
-              )}
+              {boysText.trim() && <p className="text-xs text-sky-400 mt-0.5">{boyCount} garçon{boyCount > 1 ? "s" : ""}</p>}
             </div>
           </div>
-          {totalCount > 0 && (
-            <p className="text-xs text-gray-400 -mt-2">{totalCount} personnes au total</p>
-          )}
+          {totalCount > 0 && <p className="text-xs text-gray-400 -mt-2">{totalCount} personnes au total</p>}
 
+          {/* Table count + default seats */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de tables</label>
               <input
-                type="number"
-                min={1}
-                max={20}
-                value={tableCount}
-                onChange={(e) => setTableCount(Number(e.target.value))}
+                type="number" min={1} max={20} value={tableCount}
+                onChange={e => setTableCount(Number(e.target.value))}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Places par table</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Places par défaut</label>
               <input
-                type="number"
-                min={1}
-                max={20}
-                value={seatsPerTable}
-                onChange={(e) => setSeatsPerTable(Number(e.target.value))}
+                type="number" min={1} max={30} value={defaultSeats}
+                onChange={e => setDefaultSeats(Number(e.target.value))}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
           </div>
 
+          {/* Per-table seat count */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Places par table</label>
+            <div className="grid grid-cols-2 gap-2">
+              {tableSeats.map((seats, i) => (
+                <div key={i} className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-2.5 py-2">
+                  <span className="text-xs text-gray-500 w-6 shrink-0">T{i + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSeat(i, seats - 1)}
+                    disabled={seats <= 1}
+                    className="w-6 h-6 rounded-md bg-white border border-gray-200 text-gray-600 text-sm font-bold flex items-center justify-center disabled:opacity-30 hover:bg-gray-100 transition-colors shrink-0"
+                  >
+                    −
+                  </button>
+                  <span className="flex-1 text-center text-sm font-semibold text-gray-800">{seats}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSeat(i, seats + 1)}
+                    disabled={seats >= 30}
+                    className="w-6 h-6 rounded-md bg-white border border-gray-200 text-gray-600 text-sm font-bold flex items-center justify-center disabled:opacity-30 hover:bg-gray-100 transition-colors shrink-0"
+                  >
+                    +
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Table shape */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Forme des tables</label>
             <div className="flex gap-3">
-              {(["round", "rectangular"] as TableShape[]).map((shape) => (
+              {(["round", "rectangular"] as TableShape[]).map(shape => (
                 <button
-                  key={shape}
-                  type="button"
+                  key={shape} type="button"
                   onClick={() => setTableShape(shape)}
                   className={`flex-1 rounded-xl border-2 py-3 text-sm font-medium transition-colors ${
                     tableShape === shape

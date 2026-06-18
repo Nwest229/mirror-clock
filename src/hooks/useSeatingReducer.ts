@@ -12,10 +12,10 @@ const defaultState: AppState = {
   tables: [],
 };
 
-function buildTables(tableCount: number, seatsPerTable: number, shape: import("@/types").TableShape): Table[] {
+function buildTables(tableCount: number, seatsPerTable: number[], shape: import("@/types").TableShape): Table[] {
   return Array.from({ length: tableCount }, (_, ti) => {
     const tableId = `table-${ti}`;
-    const seats: Seat[] = Array.from({ length: seatsPerTable }, (_, si) => ({
+    const seats: Seat[] = Array.from({ length: seatsPerTable[ti] ?? seatsPerTable[0] ?? 6 }, (_, si) => ({
       id: `seat-${tableId}-${si}`,
       tableId,
       seatIndex: si,
@@ -27,8 +27,18 @@ function buildTables(tableCount: number, seatsPerTable: number, shape: import("@
 
 function seatingReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case "HYDRATE":
-      return action.payload;
+    case "HYDRATE": {
+      const p = action.payload;
+      // Migrate legacy seatsPerTable: number → number[]
+      if (p.config && !Array.isArray(p.config.seatsPerTable)) {
+        const n = p.config.seatsPerTable as unknown as number;
+        return {
+          ...p,
+          config: { ...p.config, seatsPerTable: p.tables.map(t => t.seats.length) || Array(p.config.tableCount).fill(n) },
+        };
+      }
+      return p;
+    }
 
     case "SUBMIT_SETUP": {
       const { people: inputPeople, tableCount, seatsPerTable, tableShape } = action.payload;
