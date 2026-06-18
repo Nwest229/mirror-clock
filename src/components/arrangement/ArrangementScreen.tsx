@@ -5,11 +5,34 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  Modifier,
   PointerSensor,
   TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+
+// Center the drag overlay under the finger/cursor at all times, avoiding the
+// "jump to element origin" effect that occurs when the chip was grabbed off-center.
+function getPointerCoords(event: Event): { x: number; y: number } | null {
+  if ("touches" in event) {
+    const t = (event as TouchEvent).touches[0] ?? (event as TouchEvent).changedTouches[0];
+    if (t) return { x: t.clientX, y: t.clientY };
+  }
+  if ("clientX" in event) return { x: (event as MouseEvent).clientX, y: (event as MouseEvent).clientY };
+  return null;
+}
+
+const snapCenterToCursor: Modifier = ({ activatorEvent, draggingNodeRect, transform }) => {
+  if (!draggingNodeRect || !activatorEvent) return transform;
+  const coords = getPointerCoords(activatorEvent);
+  if (!coords) return transform;
+  return {
+    ...transform,
+    x: transform.x + coords.x - (draggingNodeRect.left + draggingNodeRect.width / 2),
+    y: transform.y + coords.y - (draggingNodeRect.top + draggingNodeRect.height / 2),
+  };
+};
 import { useState } from "react";
 import { Action, AppState, Person } from "@/types";
 import Button from "@/components/ui/Button";
@@ -201,7 +224,7 @@ export default function ArrangementScreen({ state, dispatch, onReset }: Arrangem
           </div>
         </div>
 
-        <DragOverlay dropAnimation={null}>
+        <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
           {activePerson ? (
             <PersonChip draggableId="overlay" name={activePerson.name} gender={activePerson.gender} isDragOverlay />
           ) : null}
