@@ -11,30 +11,40 @@ interface SetupScreenProps {
 export default function SetupScreen({ onSubmit }: SetupScreenProps) {
   const [girlsText, setGirlsText] = useState("");
   const [boysText,  setBoysText]  = useState("");
-  const [tableCount,    setTableCountRaw]    = useState(2);
-  const [defaultSeats,  setDefaultSeatsRaw]  = useState(6);
-  const [tableSeats,    setTableSeats]        = useState<number[]>([6, 6]);
-  const [tableShape,    setTableShape]        = useState<TableShape>("round");
-  const [error,         setError]             = useState("");
+
+  // String inputs so the user can clear and retype freely (e.g. "2" → "" → "6")
+  const [tableCountStr,   setTableCountStr]   = useState("2");
+  const [defaultSeatsStr, setDefaultSeatsStr] = useState("6");
+  const [tableSeats,      setTableSeats]      = useState<number[]>([6, 6]);
+  const [tableShape,      setTableShape]      = useState<TableShape>("round");
+  const [error,           setError]           = useState("");
+
+  // Derived valid numbers used in logic — fall back to 1 if input is empty/invalid
+  const tableCountNum   = Math.max(1, Math.min(20, parseInt(tableCountStr)   || 0));
+  const defaultSeatsNum = Math.max(1, Math.min(30, parseInt(defaultSeatsStr) || 0));
 
   const girlCount  = girlsText.split("\n").filter(n => n.trim()).length;
   const boyCount   = boysText.split("\n").filter(n => n.trim()).length;
   const totalCount = (girlsText.trim() ? girlCount : 0) + (boysText.trim() ? boyCount : 0);
 
-  function setTableCount(n: number) {
-    const c = Math.max(1, Math.min(20, n));
-    setTableCountRaw(c);
-    setTableSeats(prev => {
-      const next = [...prev];
-      while (next.length < c) next.push(defaultSeats);
-      return next.slice(0, c);
-    });
+  function handleTableCountChange(val: string) {
+    setTableCountStr(val);
+    const n = parseInt(val);
+    if (!isNaN(n) && n >= 1 && n <= 20) {
+      setTableSeats(prev => {
+        const next = [...prev];
+        while (next.length < n) next.push(defaultSeatsNum);
+        return next.slice(0, n);
+      });
+    }
   }
 
-  function setDefaultSeats(n: number) {
-    const v = Math.max(1, Math.min(30, n));
-    setDefaultSeatsRaw(v);
-    setTableSeats(Array(tableCount).fill(v));
+  function handleDefaultSeatsChange(val: string) {
+    setDefaultSeatsStr(val);
+    const n = parseInt(val);
+    if (!isNaN(n) && n >= 1 && n <= 30) {
+      setTableSeats(Array(tableCountNum).fill(n));
+    }
   }
 
   function setSeat(i: number, n: number) {
@@ -49,10 +59,12 @@ export default function SetupScreen({ onSubmit }: SetupScreenProps) {
     const people = [...girls, ...boys];
 
     if (people.length === 0) { setError("Entrez au moins un nom."); return; }
-    if (tableCount < 1)       { setError("Il faut au moins une table."); return; }
+    if (tableCountNum < 1)   { setError("Il faut au moins une table."); return; }
 
     setError("");
-    onSubmit({ people, tableCount, seatsPerTable: tableSeats, tableShape });
+    // Ensure seats array length matches tableCountNum, padding with defaultSeatsNum if needed
+    const seats = Array.from({ length: tableCountNum }, (_, i) => tableSeats[i] ?? defaultSeatsNum);
+    onSubmit({ people, tableCount: tableCountNum, seatsPerTable: seats, tableShape });
   }
 
   return (
@@ -93,16 +105,22 @@ export default function SetupScreen({ onSubmit }: SetupScreenProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de tables</label>
               <input
-                type="number" min={1} max={20} value={tableCount}
-                onChange={e => setTableCount(Number(e.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={tableCountStr}
+                onChange={e => handleTableCountChange(e.target.value)}
+                onBlur={() => setTableCountStr(String(tableCountNum))}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Places par défaut</label>
               <input
-                type="number" min={1} max={30} value={defaultSeats}
-                onChange={e => setDefaultSeats(Number(e.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={defaultSeatsStr}
+                onChange={e => handleDefaultSeatsChange(e.target.value)}
+                onBlur={() => setDefaultSeatsStr(String(defaultSeatsNum))}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
